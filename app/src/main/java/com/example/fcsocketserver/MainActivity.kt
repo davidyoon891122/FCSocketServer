@@ -9,7 +9,10 @@ import androidx.core.view.WindowInsetsCompat
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.PrintWriter
+import java.net.HttpURLConnection
 import java.net.ServerSocket
+import java.net.Socket
+import java.net.URL
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -17,36 +20,34 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
+
         Thread {
-            val port = 8080
-            val server = ServerSocket(port)
+            try {
+                val socket = Socket("10.0.2.2", 8080)
+                val printer = PrintWriter(socket.getOutputStream())
+                val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
 
-            val socket = server.accept()
 
-            Log.d("Server", "IP ${socket.localSocketAddress}")
+                printer.println("GET / HTTP/1.1")
+                printer.println("Host: 127.0.0.1:8080")
+                printer.println("User-Agent: android")
+                printer.println("\r\n")
+                printer.flush()
 
-            val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
-            val printer = PrintWriter(socket.getOutputStream())
+                var input: String? = "-1"
+                while(input != null) {
+                    input = reader.readLine()
+                    Log.e("Client", input)
+                }
 
-            var input: String? = "-1"
-            while (input != null && input != "") {
-                input = reader.readLine()
+                reader.close()
+                printer.close()
+                socket.close()
+            } catch (e: Exception) {
+                Log.e("Client", e.toString())
             }
 
-            Log.e("SERVER", "READ DATA $input")
-
-            printer.println("HTTP/1.1 200 OK")
-            printer.println("Content-Type: text/html\r\n")
-
-            printer.println("<h1>Hello World</h1>")
-            printer.println("\r\n")
-            printer.flush()
-            printer.close()
-
-            reader.close()
-            socket.close()
         }.start()
-
 
 
     }
