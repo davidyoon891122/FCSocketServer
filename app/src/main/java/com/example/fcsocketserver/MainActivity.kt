@@ -2,10 +2,17 @@ package com.example.fcsocketserver
 
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
+import androidx.core.widget.addTextChangedListener
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -21,31 +28,58 @@ import java.net.Socket
 import java.net.URL
 
 class MainActivity : AppCompatActivity() {
+
+    private val client = OkHttpClient()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
 
-        val client = OkHttpClient()
+        val editText = findViewById<EditText>(R.id.serverHostEditText)
+        val confirmButton = findViewById<Button>(R.id.confirmButton)
+        val informationTextView = findViewById<TextView>(R.id.informationTextView)
+        var serverHost: String = ""
 
-        val request: Request = Request.Builder()
-            .url("http://10.0.2.2:8080")
-            .build()
-
-        val callBack = object: Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                Log.e("Client", e.toString())
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-
-                if(response.isSuccessful) {
-                    Log.e("Client", "${response.body?.string()}")
-                }
-            }
+        editText.addTextChangedListener {
+            serverHost = it.toString()
         }
 
-        client.newCall(request).enqueue(callBack)
+        confirmButton.setOnClickListener {
+            val request: Request = Request.Builder()
+                .url("http://${serverHost}:8080")
+                .build()
+
+            val callBack = object: Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    runOnUiThread {
+                        Toast.makeText(this@MainActivity, "수신에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                    }
+
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+
+                    if(response.isSuccessful) {
+                        val responseString = response.body?.string()
+
+                        runOnUiThread {
+                            informationTextView.isVisible = true
+                            informationTextView.text = responseString
+
+                            editText.isVisible = false
+                            confirmButton.isVisible = false
+                        }
+                    } else {
+                        runOnUiThread {
+                            Toast.makeText(this@MainActivity, "수신에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+
+            client.newCall(request).enqueue(callBack)
+        }
 
 
 
