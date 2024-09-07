@@ -13,6 +13,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
+import com.google.gson.Gson
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -63,9 +64,12 @@ class MainActivity : AppCompatActivity() {
                     if(response.isSuccessful) {
                         val responseString = response.body?.string()
 
+                        val message = Gson().fromJson(responseString, Message::class.java)
+
+
                         runOnUiThread {
                             informationTextView.isVisible = true
-                            informationTextView.text = responseString
+                            informationTextView.text = message.message
 
                             editText.isVisible = false
                             confirmButton.isVisible = false
